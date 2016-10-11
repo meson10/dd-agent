@@ -292,6 +292,34 @@ class TestKubernetes(AgentCheckTest):
         self.run_check(config)
         self.assertEvent('hello-node-47289321-91tfd Scheduled on Bar', count=0, exact_match=False)
 
+    def test_kube_state(self):
+        mocked = mock.MagicMock()
+        mocks = {
+            '_perform_kubelet_checks': mock.MagicMock(),
+            '_update_metrics': mock.MagicMock(),
+            'kubeutil': mock.MagicMock(),
+            '_update_kube_state_metrics': mocked,
+        }
+        config = {'instances': [{'host': 'foo', 'kube_state_url': 'https://example.com:12345'}]}
+        self.run_check(config, force_reload=True, mocks=mocks)
+        mocked.assert_called_once()
+
+    def test__get_kube_state(self):
+        config = {'instances': [{'host': 'foo'}]}
+        headers = {
+            'accept': 'application/vnd.google.protobuf; proto=io.prometheus.client.MetricFamily; encoding=delimited',
+            'accept-encoding': 'gzip',
+        }
+        url = 'https://example.com'
+        self.load_check(config)
+        with mock.patch('{}.requests'.format(self.check.__module__)) as r:
+            self.check._get_kube_state(url)
+            r.get.assert_called_once_with(url, headers=headers)
+
+    def test__update_kube_state_metrics(self):
+        # TODO
+        pass
+
 
 class TestKubeutil(unittest.TestCase):
     def setUp(self):

@@ -21,6 +21,9 @@ import simplejson as json
 from checks import AgentCheck
 from config import _is_affirmative
 from utils.kubeutil import KubeUtil
+from utils.prometheus import parse_metric_family
+from utils.kubernetes import KubeStateProcessor
+
 
 NAMESPACE = "kubernetes"
 DEFAULT_MAX_DEPTH = 10
@@ -102,7 +105,6 @@ class Kubernetes(AgentCheck):
                 self.service_check(service_check_base, AgentCheck.CRITICAL)
 
     def check(self, instance):
-
         self.max_depth = instance.get('max_depth', DEFAULT_MAX_DEPTH)
         enabled_gauges = instance.get('enabled_gauges', DEFAULT_ENABLED_GAUGES)
         self.enabled_gauges = ["{0}.{1}".format(NAMESPACE, x) for x in enabled_gauges]
@@ -113,6 +115,8 @@ class Kubernetes(AgentCheck):
         self.use_histogram = _is_affirmative(instance.get('use_histogram', DEFAULT_USE_HISTOGRAM))
         self.publish_rate = FUNC_MAP[RATE][self.use_histogram]
         self.publish_gauge = FUNC_MAP[GAUGE][self.use_histogram]
+        self.kube_state_url = instance.get('kube_state_url')
+        self.kube_state_processor = KubeStateProcessor(self)
 
         pods_list = self.kubeutil.retrieve_pods_list()
 
@@ -125,6 +129,10 @@ class Kubernetes(AgentCheck):
         # kubelet events
         if _is_affirmative(instance.get('collect_events', DEFAULT_COLLECT_EVENTS)):
             self._process_events(instance, pods_list)
+
+        # kube state API
+        if self.kube_state_url is not None:
+            self._update_kube_state_metrics()
 
     def _publish_raw_metrics(self, metric, dat, tags, depth=0):
         if depth >= self.max_depth:
@@ -402,3 +410,29 @@ class Kubernetes(AgentCheck):
         if most_recent_read > 0:
             self.kubeutil.last_event_collection_ts[k8s_namespace] = most_recent_read
             self.log.debug('_last_event_collection_ts is now {}'.format(most_recent_read))
+
+    def _update_kube_state_metrics(self):
+        """
+        Retrieve the binary payload and process Prometheus metrics into
+        Datadog metrics.
+        """
+        try:
+            payload = self._get_kube_state(self.kube_state_url)
+            self.log.debug("Got a payload of size {} from Kube State API at url:{}".format(len(payload),
+                                                                                           self.kube_state_url))
+            for metric in parse_metric_family(payload):
+                self.kube_state_processor.process(metric)
+
+        except Exception as e:
+            self.log.error("Unable to retrieve metrics from Kube State API: {}".format(e))
+
+    def _get_kube_state(self, endpoint):
+        """
+        Get metrics from the Kube State API using the protobuf format.
+        """
+        headers = {
+            'accept': 'application/vnd.google.protobuf; proto=io.prometheus.client.MetricFamily; encoding=delimited',
+            'accept-encoding': 'gzip',
+        }
+        r = requests.get(endpoint, headers=headers)
+        return r.content
