@@ -418,8 +418,8 @@ class Kubernetes(AgentCheck):
         """
         try:
             payload = self._get_kube_state(self.kube_state_url)
-            self.log.debug("Got a payload of size {} from Kube State API at url:{}".format(len(payload),
-                                                                                           self.kube_state_url))
+            msg = "Got a payload of size {} from Kube State API at url:{}".format(len(payload), self.kube_state_url)
+            self.log.debug(msg)
             for metric in parse_metric_family(payload):
                 self.kube_state_processor.process(metric)
 
