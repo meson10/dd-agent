@@ -116,7 +116,8 @@ class Kubernetes(AgentCheck):
         self.publish_rate = FUNC_MAP[RATE][self.use_histogram]
         self.publish_gauge = FUNC_MAP[GAUGE][self.use_histogram]
         self.kube_state_url = instance.get('kube_state_url')
-        self.kube_state_processor = KubeStateProcessor(self)
+        if self.kube_state_url is not None:
+            self.kube_state_processor = KubeStateProcessor(self)
 
         pods_list = self.kubeutil.retrieve_pods_list()
 
