@@ -1,9 +1,11 @@
+from functools import partial
 
 
 class KubeStateProcessor:
     def __init__(self, kubernetes_check):
         self.kube_check = kubernetes_check
         self.log = self.kube_check.log
+        self.gauge = partial(self.kube_check.publish_gauge, self.kube_check)
 
     def process(self, message, **kwargs):
         """
@@ -62,70 +64,70 @@ class KubeStateProcessor:
         for metric in message.metric:
             val = metric.gauge.value
             tags = ['host:{}'.format(metric.label[0].value)]
-            self.kube_check.publish_gauge(self, metric_name, val, tags)
+            self.gauge(metric_name, val, tags)
 
     def kube_node_status_capacity_memory_bytes(self, message, **kwargs):
         metric_name = 'kubernetes.node.memory_capacity'
         for metric in message.metric:
             val = metric.gauge.value
             tags = ['host:{}'.format(self._extract_label_value("node", metric.label))]
-            self.kube_check.publish_gauge(self, metric_name, val, tags)
+            self.gauge(metric_name, val, tags)
 
     def kube_node_status_capacity_pods(self, message, **kwargs):
         metric_name = 'kubernetes.node.pods_capacity'
         for metric in message.metric:
             val = metric.gauge.value
             tags = ['host:{}'.format(self._extract_label_value("node", metric.label))]
-            self.kube_check.publish_gauge(self, metric_name, val, tags)
+            self.gauge(metric_name, val, tags)
 
     def kube_node_status_allocateable_cpu_cores(self, message, **kwargs):
         metric_name = 'kubernetes.node.cpu_allocatable'
         for metric in message.metric:
             val = metric.gauge.value
             tags = ['host:{}'.format(self._extract_label_value("node", metric.label))]
-            self.kube_check.publish_gauge(self, metric_name, val, tags)
+            self.gauge(metric_name, val, tags)
 
     def kube_node_status_allocateable_memory_bytes(self, message, **kwargs):
         metric_name = 'kubernetes.node.memory_allocatable'
         for metric in message.metric:
             val = metric.gauge.value
             tags = ['host:{}'.format(self._extract_label_value("node", metric.label))]
-            self.kube_check.publish_gauge(self, metric_name, val, tags)
+            self.gauge(metric_name, val, tags)
 
     def kube_node_status_allocateable_pods(self, message, **kwargs):
         metric_name = 'kubernetes.node.pods_allocatable'
         for metric in message.metric:
             val = metric.gauge.value
             tags = ['host:{}'.format(self._extract_label_value("node", metric.label))]
-            self.kube_check.publish_gauge(self, metric_name, val, tags)
+            self.gauge(metric_name, val, tags)
 
     def kube_deployment_status_replicas_available(self, message, **kwargs):
         metric_name = 'kubernetes.deployment.replicas_available'
         for metric in message.metric:
             val = metric.gauge.value
             tags = ['{}:{}'.format(label.name, label.value) for label in metric.label]
-            self.kube_check.publish_gauge(self, metric_name, val, tags)
+            self.gauge(metric_name, val, tags)
 
     def kube_deployment_status_replicas_unavailable(self, message, **kwargs):
         metric_name = 'kubernetes.deployment.replicas_unavailable'
         for metric in message.metric:
             val = metric.gauge.value
             tags = ['{}:{}'.format(label.name, label.value) for label in metric.label]
-            self.kube_check.publish_gauge(self, metric_name, val, tags)
+            self.gauge(metric_name, val, tags)
 
     def kube_deployment_status_replicas_updated(self, message, **kwargs):
         metric_name = 'kubernetes.deployment.replicas_updated'
         for metric in message.metric:
             val = metric.gauge.value
             tags = ['{}:{}'.format(label.name, label.value) for label in metric.label]
-            self.kube_check.publish_gauge(self, metric_name, val, tags)
+            self.gauge(metric_name, val, tags)
 
     def kube_deployment_spec_replicas(self, message, **kwargs):
         metric_name = 'kubernetes.deployment.replicas_desired'
         for metric in message.metric:
             val = metric.gauge.value
             tags = ['{}:{}'.format(label.name, label.value) for label in metric.label]
-            self.kube_check.publish_gauge(self, metric_name, val, tags)
+            self.gauge(metric_name, val, tags)
 
     def kube_node_status_ready(self, message, **kwargs):
         service_check_name = 'kube_node_status_ready'

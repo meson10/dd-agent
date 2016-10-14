@@ -317,8 +317,33 @@ class TestKubernetes(AgentCheckTest):
             r.get.assert_called_once_with(url, headers=headers)
 
     def test__update_kube_state_metrics(self):
+        f_name = os.path.join(os.path.dirname(__file__), '..', '..', 'core', 'fixtures', 'prometheus', 'protobuf.bin')
+        f = open(f_name, 'rb')
+        mocked = mock.MagicMock(return_value=f.read())
+
+        mocks = {
+            '_perform_kubelet_checks': mock.MagicMock(),
+            '_update_metrics': mock.MagicMock(),
+            'kubeutil': mock.MagicMock(),
+            '_get_kube_state': mocked,
+        }
+
+        config = {
+            'instances': [{
+                'host': 'foo',
+                'kube_state_url': 'http://foo',
+                'status_ready_for_pods': ['dd-agent']
+            }]
+        }
+
+        self.run_check(config, mocks=mocks)
+
+        self.assertServiceCheck('kube_node_status_ready', self.check.OK)
+        self.assertServiceCheck('kube_node_status_out_of_disk', self.check.OK)
+        self.assertServiceCheck('kube_pod_status_ready', self.check.OK, tags=['namespace:default', 'pod:dd-agent'])
+
         # TODO
-        pass
+        self.assertMetric('kubernetes.node.cpu_capacity')
 
 
 class TestKubeutil(unittest.TestCase):
