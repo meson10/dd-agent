@@ -133,7 +133,7 @@ class Kubernetes(AgentCheck):
 
         # kube state API
         if self.kube_state_url is not None:
-            self._update_kube_state_metrics()
+            self._update_kube_state_metrics(instance)
 
     def _publish_raw_metrics(self, metric, dat, tags, depth=0):
         if depth >= self.max_depth:
@@ -412,7 +412,7 @@ class Kubernetes(AgentCheck):
             self.kubeutil.last_event_collection_ts[k8s_namespace] = most_recent_read
             self.log.debug('_last_event_collection_ts is now {}'.format(most_recent_read))
 
-    def _update_kube_state_metrics(self):
+    def _update_kube_state_metrics(self, instance):
         """
         Retrieve the binary payload and process Prometheus metrics into
         Datadog metrics.
@@ -422,7 +422,7 @@ class Kubernetes(AgentCheck):
             msg = "Got a payload of size {} from Kube State API at url:{}".format(len(payload), self.kube_state_url)
             self.log.debug(msg)
             for metric in parse_metric_family(payload):
-                self.kube_state_processor.process(metric)
+                self.kube_state_processor.process(metric, instance=instance)
 
         except Exception as e:
             self.log.error("Unable to retrieve metrics from Kube State API: {}".format(e))

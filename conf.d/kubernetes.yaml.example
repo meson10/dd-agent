@@ -36,3 +36,10 @@ instances:
   #
   # enabled_gauges:
   #   - filesystem.*
+
+  # Kube State API
+  #
+  # Provide a service check monitoring whether the listed pods are ready to serve requests.
+  # status_ready_for_pods:
+  #   - pod_name_1
+  #   - pod_name_2
