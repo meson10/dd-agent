@@ -342,8 +342,15 @@ class TestKubernetes(AgentCheckTest):
         self.assertServiceCheck('kube_node_status_out_of_disk', self.check.OK)
         self.assertServiceCheck('kube_pod_status_ready', self.check.OK, tags=['namespace:default', 'pod:dd-agent'])
 
-        # TODO
         self.assertMetric('kubernetes.node.cpu_capacity')
+        self.assertMetric('kubernetes.node.memory_capacity')
+        self.assertMetric('kubernetes.node.pods_capacity')
+        self.assertMetric('kubernetes.node.cpu_allocatable')
+        self.assertMetric('kubernetes.node.memory_allocatable')
+        self.assertMetric('kubernetes.node.pods_allocatable')
+        self.assertMetric('kubernetes.deployment.replicas_available')
+        self.assertMetric('kubernetes.deployment.replicas_unavailable')
+        self.assertMetric('kubernetes.deployment.replicas_desired')
 
 
 class TestKubeutil(unittest.TestCase):
