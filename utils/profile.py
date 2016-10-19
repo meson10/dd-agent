@@ -7,6 +7,7 @@ import cProfile  # noqa, it seems that import-names thinks it's not stdlib
 from cStringIO import StringIO
 import logging
 import pstats  # noqa, same here
+from urlparse import urljoin
 
 log = logging.getLogger('collector')
 
@@ -41,8 +42,12 @@ class AgentProfiler(object):
         log.debug(s.getvalue())
         log.debug("Agent profiling is disabled")
         if self.DUMP_TO_FILE:
-            log.debug("Pstats dumps are enabled. Dumping pstats output to {0}".format(self.STATS_DUMP_FILE))
-            ps.dump_stats(self.STATS_DUMP_FILE)
+            try:
+                ps.dump_stats(self.STATS_DUMP_FILE)
+                log.debug("Pstats dumps are enabled. Dumping pstats output to {0}".format(self.STATS_DUMP_FILE))
+            except IOError:
+                log.debug('Dumping pstats output to {} failed, using /tmp instead.'.format(self.STATS_DUMP_FILE))
+                ps.dump_stats(urljoin('/tmp/', self.STATS_DUMP_FILE))
 
     @staticmethod
     def wrap_profiling(func):
